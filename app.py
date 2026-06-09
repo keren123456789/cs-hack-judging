@@ -2,7 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import time
-import json # הוספנו את זה בשביל הסודות
+import json
 
 # --- הגדרות תצוגה ---
 st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="centered")
@@ -10,12 +10,10 @@ st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="cente
 # --- הזרקת CSS לעיצוב אישי ---
 st.markdown("""
 <style>
-    /* הסתרת התפריט והקרדיט של סטרימליט למטה */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* עיצוב הכפתור שיהיה בולט ומרשים */
     .stButton>button {
         background-color: #FFD700;
         color: #000000;
@@ -31,7 +29,6 @@ st.markdown("""
         color: white;
     }
     
-    /* עיצוב הרקע של הטופס (צל ופינות מעוגלות) */
     [data-testid="stForm"] {
         border: 2px solid #333333;
         border-radius: 15px;
@@ -39,15 +36,8 @@ st.markdown("""
         box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
     }
     
-    /* עיצוב כותרות האפליקציה */
-    h1 {
-        text-align: center;
-        color: #FFD700;
-    }
-    h3 {
-        text-align: center;
-        color: #bbbbbb;
-    }
+    h1 { text-align: center; color: #FFD700; }
+    h3 { text-align: center; color: #bbbbbb; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -57,13 +47,41 @@ SHEET_ID = "16rGiFhGTWEah_8ZH36QHFoj1nS_x9hcP0xxKBjkk530"
 def get_sheets_client():
     scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     try:
-        # מנסה לקרוא מהסודות המאובטחים של סטרימליט באוויר
         creds_dict = json.loads(st.secrets["gcp_credentials"])
         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     except:
-        # אם הוא לא מוצא (כמו במחשב המקומי שלך), הוא קורא מהקובץ הרגיל
         creds = Credentials.from_service_account_file("secrets.json", scopes=scopes)
     return gspread.authorize(creds)
+
+# =====================================================================
+# מנגנוני הגנה: Cache Data
+# פה אנחנו מגדירים שנתונים יישמרו בזיכרון ולא ישגעו את השרת של גוגל
+# =====================================================================
+
+@st.cache_data(ttl=60)
+def get_finalists():
+    """מושך את הקבוצות לגמר רק פעם בדקה"""
+    try:
+        client = get_sheets_client()
+        workbook = client.open_by_key(SHEET_ID)
+        teams_sheet = workbook.worksheet("Finalists")
+        teams_data = teams_sheet.col_values(1)[1:]
+        live_teams = [int(x.strip()) for x in teams_data if x.strip().isdigit()]
+        return live_teams if live_teams else [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    except:
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+@st.cache_data(ttl=15)
+def get_all_scores():
+    """מושך ציונים קיימים ושומר בזיכרון כדי למנוע קריסות 429"""
+    try:
+        client = get_sheets_client()
+        sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+        return sheet.get_all_values()
+    except:
+        return []
+
+# =====================================================================
 
 # --- הוספת הלוגו הרשמי ---
 logo_col1, logo_col2, logo_col3 = st.columns([1, 2, 1])
@@ -75,33 +93,20 @@ with logo_col2:
 
 st.markdown("### שלב הגמר")
 
-# רשימת ברירת מחדל 
-finalist_teams = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# משיכת הנתונים בטוחה לחלוטין עכשיו!
+finalist_teams = get_finalists()
+all_rows = get_all_scores()
 
-try:
-    client = get_sheets_client()
-    workbook = client.open_by_key(SHEET_ID)
-    
-    # פתיחת הגיליון הראשון (עבור הציונים)
-    sheet = workbook.get_worksheet(0)
-    values = sheet.get_all_values()
-    headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Scalability", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
-    if not values:
-        sheet.append_row(headers)
-        
-    # --- משיכת הקבוצות מהלשונית באנגלית ---
+# יצירת כותרות בפעם הראשונה בלבד
+if not all_rows:
     try:
-        teams_sheet = workbook.worksheet("Finalists")
-        teams_data = teams_sheet.col_values(1)[1:] 
-        live_teams = [int(x.strip()) for x in teams_data if x.strip().isdigit()]
-        if live_teams:
-            finalist_teams = live_teams
+        client = get_sheets_client()
+        sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Scalability", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
+        sheet.append_row(headers)
+        get_all_scores.clear() # מנקה את הזיכרון כדי שהכותרות יטענו
     except:
-        pass 
-
-except Exception as e:
-    st.error(f"❌ שגיאה בתקשורת עם Google Sheets: {e}")
-    st.stop()
+        pass
 
 if "saved_judge_name" not in st.session_state:
     st.session_state.saved_judge_name = ""
@@ -114,19 +119,16 @@ with col1:
 with col2:
     team_num = st.selectbox(" בחר קבוצה לדירוג:", finalist_teams)
 
-def find_existing_rating(judge, team):
-    if not judge:
+def find_existing_rating(judge, team, rows):
+    if not judge or len(rows) <= 1:
         return None
-    all_rows = sheet.get_all_values()
-    if len(all_rows) <= 1:
-        return None
-    for idx, row in enumerate(all_rows[1:], start=2):
+    for idx, row in enumerate(rows[1:], start=2):
         if len(row) >= 2:
             if row[0].strip().lower() == judge.lower() and str(row[1]).strip() == str(team):
                 return idx, row
     return None
 
-existing_record = find_existing_rating(judge_name, team_num)
+existing_record = find_existing_rating(judge_name, team_num, all_rows)
 
 if existing_record:
     idx, row = existing_record
@@ -184,6 +186,10 @@ with st.form("judging_form"):
                 round(total_score, 2)
             ]
             
+            # חיבור טרי לגוגל רק ברגע השמירה הקריטי
+            client = get_sheets_client()
+            sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+            
             if existing_record:
                 idx, _ = existing_record
                 try:
@@ -191,10 +197,12 @@ with st.form("judging_form"):
                 except:
                     sheet.update([new_row], f"A{idx}:J{idx}")
                 st.success(f"✅ הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
-                time.sleep(1.5)
-                st.rerun()
             else:
                 sheet.append_row(new_row)
                 st.success(f"✅ הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
-                time.sleep(1.5)
-                st.rerun()
+            
+            # מחיקת הזיכרון לאחר שמירה כדי שהמערכת תתעדכן מיד עבור כולם
+            get_all_scores.clear()
+            
+            time.sleep(1.5)
+            st.rerun()
