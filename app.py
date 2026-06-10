@@ -196,10 +196,10 @@ with st.form("judging_form"):
                     sheet.update(f"A{idx}:J{idx}", [new_row])
                 except:
                     sheet.update([new_row], f"A{idx}:J{idx}")
-                st.success(f"✅ הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
+                st.success(f" הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
             else:
                 sheet.append_row(new_row)
-                st.success(f"✅ הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
+                st.success(f" הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
             
             # מחיקת הזיכרון לאחר שמירה כדי שהמערכת תתעדכן מיד עבור כולם
             get_all_scores.clear()
