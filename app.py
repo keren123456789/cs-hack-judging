@@ -10,10 +10,48 @@ st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="cente
 # --- הזרקת CSS לעיצוב אישי ---
 st.markdown("""
 <style>
+    /* --- ייבוא הפונט Rubik מגוגל פונטס --- */
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+
+    /* החלת הפונט על כל רכיבי האפליקציה */
+    html, body, [class*="css"], [class*="st-"] {
+        font-family: 'Rubik', sans-serif !important;
+    }
+
+    /* 1. הפיכת כל האפליקציה לימין-שמאל (RTL) באופן מוחלט */
+    .stApp, [data-testid="stAppViewBlockContainer"] {
+        direction: rtl !important;
+    }
+    
+    /* 2. החזרת הסליידרים (שהם באנגלית) למצב משמאל לימין כדי ש-1 יישאר בשמאל ו-10 בימין */
+    [data-testid="stSlider"] {
+        direction: ltr !important;
+    }
+    
+    /* =========================================
+       SLIDER CUSTOMIZATIONS (Clean Inner Fill)
+       ========================================= */
+       
+    /* Make the slider labels bold and slightly larger */
+    div[data-testid="stSlider"] label p {
+        font-weight: 700 !important; 
+        font-size: 15px !important;
+    }
+
+    /* The thumb (the circle you drag) */
+    div[data-baseweb="slider"] div[role="slider"] {
+        background-color: #ffffff !important;
+        border: 3px solid #FFD700 !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.5) !important;
+    }
+    /* ========================================= */
+
+    /* הסתרת התפריט והקרדיט של סטרימליט למטה */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
+    /* עיצוב הכפתור שיהיה בולט ומרשים */
     .stButton>button {
         background-color: #FFD700;
         color: #000000;
@@ -23,12 +61,14 @@ st.markdown("""
         font-weight: bold;
         font-size: 18px;
         transition: 0.3s;
+        font-family: 'Rubik', sans-serif !important; 
     }
     .stButton>button:hover {
         background-color: #FFA500;
         color: white;
     }
     
+    /* עיצוב הרקע של הטופס (צל ופינות מעוגלות) */
     [data-testid="stForm"] {
         border: 2px solid #333333;
         border-radius: 15px;
@@ -36,8 +76,22 @@ st.markdown("""
         box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
     }
     
-    h1 { text-align: center; color: #FFD700; }
-    h3 { text-align: center; color: #bbbbbb; }
+    /* עיצוב כותרות האפליקציה */
+    h1 { 
+        text-align: center; 
+        color: #FFD700; 
+        font-family: 'Rubik', sans-serif !important;
+    }
+    h3 { 
+        text-align: center; 
+        color: #bbbbbb; 
+        font-family: 'Rubik', sans-serif !important;
+    }
+    h4 { 
+        text-align: center; 
+        color: #bbbbbb; 
+        font-family: 'Rubik', sans-serif !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,12 +109,10 @@ def get_sheets_client():
 
 # =====================================================================
 # מנגנוני הגנה: Cache Data
-# פה אנחנו מגדירים שנתונים יישמרו בזיכרון ולא ישגעו את השרת של גוגל
 # =====================================================================
 
 @st.cache_data(ttl=60)
 def get_finalists():
-    """מושך את הקבוצות לגמר רק פעם בדקה"""
     try:
         client = get_sheets_client()
         workbook = client.open_by_key(SHEET_ID)
@@ -73,10 +125,19 @@ def get_finalists():
 
 @st.cache_data(ttl=15)
 def get_all_scores():
-    """מושך ציונים קיימים ושומר בזיכרון כדי למנוע קריסות 429"""
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+        return sheet.get_all_values()
+    except:
+        return []
+
+@st.cache_data(ttl=60)
+def get_team_descriptions():
+    """שולף את תיאורי הקבוצות ושומר בזיכרון למניעת קריסות"""
+    try:
+        client = get_sheets_client()
+        sheet = client.open_by_key(SHEET_ID).worksheet("Finalists")
         return sheet.get_all_values()
     except:
         return []
@@ -93,18 +154,16 @@ with logo_col2:
 
 st.markdown("### שלב הגמר")
 
-# משיכת הנתונים בטוחה לחלוטין עכשיו!
 finalist_teams = get_finalists()
 all_rows = get_all_scores()
 
-# יצירת כותרות בפעם הראשונה בלבד
 if not all_rows:
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
         headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Scalability", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
         sheet.append_row(headers)
-        get_all_scores.clear() # מנקה את הזיכרון כדי שהכותרות יטענו
+        get_all_scores.clear() 
     except:
         pass
 
@@ -114,10 +173,12 @@ if "saved_judge_name" not in st.session_state:
 st.markdown("---")
 
 col1, col2 = st.columns(2)
+
 with col1:
-    judge_name = st.text_input("שם השופט :", value=st.session_state.saved_judge_name).strip()
+    judge_name = st.text_input("שם השופט:", value=st.session_state.saved_judge_name).strip()
+
 with col2:
-    team_num = st.selectbox(" בחר קבוצה לדירוג:", finalist_teams)
+    team_num = st.selectbox("בחר קבוצה לדירוג:", finalist_teams)
 
 def find_existing_rating(judge, team, rows):
     if not judge or len(rows) <= 1:
@@ -130,9 +191,19 @@ def find_existing_rating(judge, team, rows):
 
 existing_record = find_existing_rating(judge_name, team_num, all_rows)
 
+# --- שליפת התיאור מהזיכרון החכם ---
+team_desc = ""
+for row in get_team_descriptions()[1:]:
+    if len(row) >= 2 and str(row[0]).strip() == str(team_num):
+        team_desc = f"- {row[1].strip()}"
+        break
+
 if existing_record:
     idx, row = existing_record
-    st.warning(f" נמצא דירוג קודם שלך לקבוצה {team_num}! שינוי הציונים יעדכן את השורה הקיימת בטבלה.")
+    
+    # הודעת האזהרה הצהובה עם התיאור וירידת השורה
+    st.warning(f"דירגת קבוצה זו בהצלחה - קבוצה {team_num} {team_desc}\n\nשליחת הטופס שוב תעדכן את הציון הקיים")
+    
     try:
         val_real = int(float(row[2]))
         val_soln = int(float(row[3]))
@@ -164,7 +235,7 @@ with st.form("judging_form"):
 
     if submitted:
         if not judge_name:
-            st.error("❗ חובה להזין שם שופט לפני השמירה.")
+            st.error("!! חובה להזין שם שופט לפני השמירה !!")
         else:
             st.session_state.saved_judge_name = judge_name
             
@@ -196,10 +267,11 @@ with st.form("judging_form"):
                     sheet.update(f"A{idx}:J{idx}", [new_row])
                 except:
                     sheet.update([new_row], f"A{idx}:J{idx}")
-                st.success(f" הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
+                # חזרה להודעה הקצרה והמקורית
+                st.success(f"הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
             else:
                 sheet.append_row(new_row)
-                st.success(f" הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
+                st.success(f"הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
             
             # מחיקת הזיכרון לאחר שמירה כדי שהמערכת תתעדכן מיד עבור כולם
             get_all_scores.clear()
