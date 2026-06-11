@@ -3,6 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import time
 import json
+import random  # <--- הוספנו את ספריית הרנדום לפיזור עומסים
 
 # --- הגדרות תצוגה ---
 st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="centered")
@@ -13,25 +14,18 @@ st.markdown("""
     /* --- ייבוא הפונט Rubik מגוגל פונטס --- */
     @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;800&display=swap');
 
-    /* החלת הפונט על כל רכיבי האפליקציה */
     html, body, [class*="css"], [class*="st-"] {
         font-family: 'Rubik', sans-serif !important;
     }
 
-    /* 1. הפיכת כל האפליקציה לימין-שמאל (RTL) באופן מוחלט */
     .stApp, [data-testid="stAppViewBlockContainer"] {
         direction: rtl !important;
     }
     
-    /* 2. החזרת הסליידרים (שהם באנגלית) למצב משמאל לימין כדי ש-1 יישאר בשמאל ו-10 בימין */
     [data-testid="stSlider"] {
         direction: ltr !important;
     }
     
-    /* =========================================
-       SLIDER CUSTOMIZATIONS (Clean Inner Fill)
-       ========================================= */
-       
     div[data-testid="stSlider"] label p {
         font-weight: 700 !important; 
         font-size: 15px !important;
@@ -43,14 +37,10 @@ st.markdown("""
         box-shadow: 0px 2px 5px rgba(0,0,0,0.5) !important;
     }
 
-    /* הסתרת התפריט והקרדיט של סטרימליט למטה */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* =========================================
-       עיצוב כפתור השליחה (בולט וזוהר למצב כהה)
-       ========================================= */
     .stButton>button {
         background-color: #FFD700 !important; 
         color: #000000 !important; 
@@ -97,10 +87,6 @@ def get_sheets_client():
         creds = Credentials.from_service_account_file("secrets.json", scopes=scopes)
     return gspread.authorize(creds)
 
-# =====================================================================
-# מנגנוני הגנה: Cache Data
-# =====================================================================
-
 @st.cache_data(ttl=60)
 def get_finalists():
     try:
@@ -131,8 +117,6 @@ def get_team_descriptions():
     except:
         return []
 
-# =====================================================================
-
 logo_col1, logo_col2, logo_col3 = st.columns([1, 2, 1])
 with logo_col2:
     try:
@@ -144,16 +128,6 @@ st.markdown("### שלב הגמר")
 
 finalist_teams = get_finalists()
 all_rows = get_all_scores()
-
-if not all_rows:
-    try:
-        client = get_sheets_client()
-        sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
-        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Quality of POC", "Creativity", "Presentation", "Personal Impression", "ציון משוקלל סופי"]
-        sheet.append_row(headers)
-        get_all_scores.clear() 
-    except:
-        pass
 
 if "saved_judge_name" not in st.session_state:
     st.session_state.saved_judge_name = ""
@@ -169,7 +143,7 @@ with col2:
     team_num = st.selectbox("בחר קבוצה לדירוג:", finalist_teams)
 
 def find_existing_rating(judge, team, rows):
-    if not judge or len(rows) <= 1:
+    if not judge or not rows or len(rows) <= 1:
         return None
     for idx, row in enumerate(rows[1:], start=2):
         if len(row) >= 2:
@@ -238,11 +212,10 @@ with st.form("judging_form"):
             ]
             
             # =================================================================
-            # מנגנון RETRY שקט וסבלני (Exponential Backoff)
+            # מנגנון RETRY עם JITTER מובנה למניעת התנגשויות עומס
             # =================================================================
             max_retries = 10
             success = False
-            wait_time = 1.5
             
             with st.spinner("שומר את הציון במערכת... ⏳"):
                 for attempt in range(max_retries):
@@ -262,15 +235,15 @@ with st.form("judging_form"):
                             st.success(f"הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
                         
                         success = True
-                        break # ברגע שהצלחנו, יוצאים מלולאת הניסיונות בשקט
+                        break # השמירה הצליחה - יוצאים החוצה
                         
                     except Exception as e:
                         if attempt < max_retries - 1:
-                            time.sleep(wait_time) 
-                            wait_time += 1 # הגדלת זמן ההמתנה בין ניסיון לניסיון כדי לתת לשרת אוויר לנשימה
+                            # בחירת זמן אקראי בין שנייה ל-4 שניות וכל פעם מגדילים את טווח ההמתנה
+                            jitter_wait = random.uniform(1.0, 4.0) + attempt
+                            time.sleep(jitter_wait) 
                         else:
-                            # הודעה עדינה שלא חושפת תקלות טכניות ומנחה לא לרענן
-                            st.warning(" החיבור מעט איטי. הציונים שבחרת שמורים – פשוט לחץ שוב על 'שלח ציון למערכת'.")
+                            st.warning("החיבור מעט איטי. הציונים שבחרת שמורים – פשוט לחץ שוב על 'שלח ציון' (אין צורך לרענן את העמוד).")
             
             if success:
                 get_all_scores.clear()
