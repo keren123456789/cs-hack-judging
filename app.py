@@ -238,12 +238,13 @@ with st.form("judging_form"):
             ]
             
             # =================================================================
-            # מנגנון RETRY חדש להגנה מפני עומס על גוגל שיטס
+            # מנגנון RETRY שקט וסבלני (Exponential Backoff)
             # =================================================================
-            max_retries = 5
+            max_retries = 10
             success = False
+            wait_time = 1.5
             
-            with st.spinner("מוודא שמירה מול גוגל..."):
+            with st.spinner("שומר את הציון במערכת... ⏳"):
                 for attempt in range(max_retries):
                     try:
                         client = get_sheets_client()
@@ -261,13 +262,15 @@ with st.form("judging_form"):
                             st.success(f"הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
                         
                         success = True
-                        break # ברגע שהצלחנו, יוצאים מלולאת הניסיונות
+                        break # ברגע שהצלחנו, יוצאים מלולאת הניסיונות בשקט
                         
                     except Exception as e:
                         if attempt < max_retries - 1:
-                            time.sleep(1.5) # ממתין שניה וחצי לפני הניסיון הבא כדי שגוגל יירגע
+                            time.sleep(wait_time) 
+                            wait_time += 1 # הגדלת זמן ההמתנה בין ניסיון לניסיון כדי לתת לשרת אוויר לנשימה
                         else:
-                            st.error("עומס זמני על שרתי גוגל. אנא לחץ שוב על 'שלח ציון'.")
+                            # הודעה עדינה שלא חושפת תקלות טכניות ומנחה לא לרענן
+                            st.warning("החיבור מעט איטי. הציונים שבחרת שמורים – פשוט לחץ שוב על 'שלח ציון' (אין צורך לרענן את העמוד).")
             
             if success:
                 get_all_scores.clear()
