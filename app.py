@@ -32,19 +32,16 @@ st.markdown("""
        SLIDER CUSTOMIZATIONS (Clean Inner Fill)
        ========================================= */
        
-    /* Make the slider labels bold and slightly larger */
     div[data-testid="stSlider"] label p {
         font-weight: 700 !important; 
         font-size: 15px !important;
     }
 
-    /* The thumb (the circle you drag) */
     div[data-baseweb="slider"] div[role="slider"] {
-        background-color: #ff4b4b !important; /* אדום חי וברור */
-        border: 3px solid #ffffff !important; /* מסגרת לבנה להבלטה */
+        background-color: #ff4b4b !important; 
+        border: 3px solid #ffffff !important; 
         box-shadow: 0px 2px 5px rgba(0,0,0,0.5) !important;
     }
-    /* ========================================= */
 
     /* הסתרת התפריט והקרדיט של סטרימליט למטה */
     #MainMenu {visibility: hidden;}
@@ -55,29 +52,26 @@ st.markdown("""
        עיצוב כפתור השליחה (בולט וזוהר למצב כהה)
        ========================================= */
     .stButton>button {
-        background-color: #FFD700 !important; /* צבע זהב חזק */
-        color: #000000 !important; /* טקסט שחור קונטרסטי */
-        border-radius: 12px !important; /* פינות עגולות ורכות יותר */
-        border: 2px solid #FFC107 !important; /* מסגרת שמדגישה את הגבולות */
-        box-shadow: 0px 0px 15px rgba(255, 215, 0, 0.3) !important; /* הילה (גלואו) סביב הכפתור */
-        font-weight: 800 !important; /* טקסט שמן מאוד */
-        font-size: 22px !important; /* פונט גדול יותר משמעותית */
-        padding: 15px 30px !important; /* הגדלת שטח הכפתור למגע בטלפון */
-        margin-top: 20px !important; /* ריווח נשימה מהסליידר האחרון */
-        transition: all 0.3s ease-in-out !important; /* אנימציה חלקה */
+        background-color: #FFD700 !important; 
+        color: #000000 !important; 
+        border-radius: 12px !important; 
+        border: 2px solid #FFC107 !important; 
+        box-shadow: 0px 0px 15px rgba(255, 215, 0, 0.3) !important; 
+        font-weight: 800 !important; 
+        font-size: 22px !important; 
+        padding: 15px 30px !important; 
+        margin-top: 20px !important; 
+        transition: all 0.3s ease-in-out !important; 
         font-family: 'Rubik', sans-serif !important; 
     }
     
-    /* אפקט כשהעכבר מרחף (או בלחיצה בטלפון) */
     .stButton>button:hover {
-        background-color: #FFA500 !important; /* מתחלף לזהב-כתום */
-        color: white !important; /* טקסט הופך ללבן */
-        transform: scale(1.03) !important; /* הכפתור "קופץ" מעט החוצה */
-        box-shadow: 0px 0px 25px rgba(255, 215, 0, 0.6) !important; /* ההילה מתחזקת */
+        background-color: #FFA500 !important; 
+        color: white !important; 
+        transform: scale(1.03) !important; 
+        box-shadow: 0px 0px 25px rgba(255, 215, 0, 0.6) !important; 
     }
-    /* ========================================= */
     
-    /* עיצוב הרקע של הטופס (צל ופינות מעוגלות) */
     [data-testid="stForm"] {
         border: 2px solid #333333;
         border-radius: 15px;
@@ -85,22 +79,9 @@ st.markdown("""
         box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
     }
     
-    /* עיצוב כותרות האפליקציה */
-    h1 { 
-        text-align: center; 
-        color: #FFD700; 
-        font-family: 'Rubik', sans-serif !important;
-    }
-    h3 { 
-        text-align: center; 
-        color: #bbbbbb; 
-        font-family: 'Rubik', sans-serif !important;
-    }
-    h4 { 
-        text-align: center; 
-        color: #bbbbbb; 
-        font-family: 'Rubik', sans-serif !important;
-    }
+    h1 { text-align: center; color: #FFD700; font-family: 'Rubik', sans-serif !important; }
+    h3 { text-align: center; color: #bbbbbb; font-family: 'Rubik', sans-serif !important; }
+    h4 { text-align: center; color: #bbbbbb; font-family: 'Rubik', sans-serif !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -143,7 +124,6 @@ def get_all_scores():
 
 @st.cache_data(ttl=60)
 def get_team_descriptions():
-    """שולף את תיאורי הקבוצות ושומר בזיכרון למניעת קריסות"""
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).worksheet("Finalists")
@@ -153,7 +133,6 @@ def get_team_descriptions():
 
 # =====================================================================
 
-# --- הוספת הלוגו הרשמי ---
 logo_col1, logo_col2, logo_col3 = st.columns([1, 2, 1])
 with logo_col2:
     try:
@@ -170,7 +149,6 @@ if not all_rows:
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
-        # מעודכן: Personal Impression
         headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Quality of POC", "Creativity", "Presentation", "Personal Impression", "ציון משוקלל סופי"]
         sheet.append_row(headers)
         get_all_scores.clear() 
@@ -201,7 +179,6 @@ def find_existing_rating(judge, team, rows):
 
 existing_record = find_existing_rating(judge_name, team_num, all_rows)
 
-# --- שליפת התיאור מהזיכרון החכם ---
 team_desc = ""
 for row in get_team_descriptions()[1:]:
     if len(row) >= 2 and str(row[0]).strip() == str(team_num):
@@ -210,12 +187,8 @@ for row in get_team_descriptions()[1:]:
 
 if existing_record:
     idx, row = existing_record
-    
-    # הודעת האזהרה הצהובה עם התיאור וירידת השורה
     st.warning(f"דירגת קבוצה זו בהצלחה - קבוצה {team_num} {team_desc}\n\nשליחת הטופס שוב תעדכן את הציון הקיים")
-    
     try:
-        # התאמת המיקומים לאחר הסרת Scalability
         val_real = int(float(row[2]))
         val_soln = int(float(row[3]))
         val_poc = int(float(row[4]))
@@ -237,7 +210,6 @@ with st.form("judging_form"):
     quality_poc = st.slider(" Quality of POC (20%)", 1, 10, val_poc)
     creativity = st.slider(" Creativity & Novelty (15%)", 1, 10, val_creat)
     presentation = st.slider(" Presentation (10%)", 1, 10, val_pres)
-    # מעודכן: Personal Impression
     personal = st.slider(" Personal Impression (15%)", 1, 10, val_pers)
 
     st.write("") 
@@ -249,12 +221,10 @@ with st.form("judging_form"):
         else:
             st.session_state.saved_judge_name = judge_name
             
-            # חישוב משוקלל עם האחוזים החדשים
             total_score = (real_problem * 0.20) + (solution * 0.20) + \
                           (quality_poc * 0.20) + (creativity * 0.15) + \
                           (presentation * 0.10) + (personal * 0.15)
             
-            # בניית שורת הנתונים החדשה (9 עמודות)
             new_row = [
                 judge_name, 
                 str(team_num), 
@@ -267,25 +237,39 @@ with st.form("judging_form"):
                 round(total_score, 2)
             ]
             
-            # חיבור טרי לגוגל רק ברגע השמירה הקריטי
-            client = get_sheets_client()
-            sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+            # =================================================================
+            # מנגנון RETRY חדש להגנה מפני עומס על גוגל שיטס
+            # =================================================================
+            max_retries = 5
+            success = False
             
-            if existing_record:
-                idx, _ = existing_record
-                try:
-                    # עדכון שורה קיימת לפי הטווח החדש (A עד I במקום J)
-                    sheet.update(f"A{idx}:I{idx}", [new_row])
-                except:
-                    sheet.update([new_row], f"A{idx}:I{idx}")
-                # חזרה להודעה הקצרה והמקורית
-                st.success(f"הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
-            else:
-                sheet.append_row(new_row)
-                st.success(f"הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
+            with st.spinner("מוודא שמירה מול גוגל..."):
+                for attempt in range(max_retries):
+                    try:
+                        client = get_sheets_client()
+                        sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
+                        
+                        if existing_record:
+                            idx, _ = existing_record
+                            try:
+                                sheet.update(f"A{idx}:I{idx}", [new_row])
+                            except:
+                                sheet.update([new_row], f"A{idx}:I{idx}")
+                            st.success(f"הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
+                        else:
+                            sheet.append_row(new_row)
+                            st.success(f"הציון לקבוצה {team_num} נשמר בהצלחה במערכת!")
+                        
+                        success = True
+                        break # ברגע שהצלחנו, יוצאים מלולאת הניסיונות
+                        
+                    except Exception as e:
+                        if attempt < max_retries - 1:
+                            time.sleep(1.5) # ממתין שניה וחצי לפני הניסיון הבא כדי שגוגל יירגע
+                        else:
+                            st.error("עומס זמני על שרתי גוגל. אנא לחץ שוב על 'שלח ציון'.")
             
-            # מחיקת הזיכרון לאחר שמירה כדי שהמערכת תתעדכן מיד עבור כולם
-            get_all_scores.clear()
-            
-            time.sleep(1.5)
-            st.rerun()
+            if success:
+                get_all_scores.clear()
+                time.sleep(1.5)
+                st.rerun()
