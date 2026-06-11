@@ -170,7 +170,8 @@ if not all_rows:
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
-        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
+        # מעודכן: Personal Impression
+        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Quality of POC", "Creativity", "Presentation", "Personal Impression", "ציון משוקלל סופי"]
         sheet.append_row(headers)
         get_all_scores.clear() 
     except:
@@ -236,7 +237,8 @@ with st.form("judging_form"):
     quality_poc = st.slider(" Quality of POC (20%)", 1, 10, val_poc)
     creativity = st.slider(" Creativity & Novelty (15%)", 1, 10, val_creat)
     presentation = st.slider(" Presentation (10%)", 1, 10, val_pres)
-    personal = st.slider(" Personal Grade (15%)", 1, 10, val_pers)
+    # מעודכן: Personal Impression
+    personal = st.slider(" Personal Impression (15%)", 1, 10, val_pers)
 
     st.write("") 
     submitted = st.form_submit_button("שלח ציון למערכת", use_container_width=True)
@@ -287,4 +289,3 @@ with st.form("judging_form"):
             
             time.sleep(1.5)
             st.rerun()
-            
