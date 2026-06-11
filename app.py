@@ -3,7 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import time
 import json
-import random  # <--- הוספנו את ספריית הרנדום לפיזור עומסים
+import random
 
 # --- הגדרות תצוגה ---
 st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="centered")
@@ -142,12 +142,13 @@ with col1:
 with col2:
     team_num = st.selectbox("בחר קבוצה לדירוג:", finalist_teams)
 
+# פונקציית זיהוי חכמה יותר שמנטרלת רווחים ואותיות גדולות/קטנות
 def find_existing_rating(judge, team, rows):
     if not judge or not rows or len(rows) <= 1:
         return None
     for idx, row in enumerate(rows[1:], start=2):
         if len(row) >= 2:
-            if row[0].strip().lower() == judge.lower() and str(row[1]).strip() == str(team):
+            if str(row[0]).strip().lower() == str(judge).strip().lower() and str(row[1]).strip() == str(team).strip():
                 return idx, row
     return None
 
@@ -212,7 +213,7 @@ with st.form("judging_form"):
             ]
             
             # =================================================================
-            # מנגנון RETRY עם JITTER מובנה למניעת התנגשויות עומס
+            # מנגנון RETRY עם JITTER מובנה למניעת התנגשויות עומס וכפילויות
             # =================================================================
             max_retries = 10
             success = False
@@ -223,12 +224,19 @@ with st.form("judging_form"):
                         client = get_sheets_client()
                         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
                         
-                        if existing_record:
-                            idx, _ = existing_record
+                        # --- בדיקה חיה מול גוגל באותו רגע למניעת כפילויות ---
+                        live_rows = sheet.get_all_values()
+                        live_existing_record = find_existing_rating(judge_name, team_num, live_rows)
+                        
+                        if live_existing_record:
+                            idx, _ = live_existing_record
                             try:
+                                # ניסיון עדכון בתחביר חדש של פייתון
+                                sheet.update(range_name=f"A{idx}:I{idx}", values=[new_row])
+                            except TypeError:
+                                # ניסיון עדכון בתחביר ישן
                                 sheet.update(f"A{idx}:I{idx}", [new_row])
-                            except:
-                                sheet.update([new_row], f"A{idx}:I{idx}")
+                                
                             st.success(f"הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
                         else:
                             sheet.append_row(new_row)
@@ -239,7 +247,6 @@ with st.form("judging_form"):
                         
                     except Exception as e:
                         if attempt < max_retries - 1:
-                            # בחירת זמן אקראי בין שנייה ל-4 שניות וכל פעם מגדילים את טווח ההמתנה
                             jitter_wait = random.uniform(1.0, 4.0) + attempt
                             time.sleep(jitter_wait) 
                         else:
