@@ -11,7 +11,7 @@ st.set_page_config(page_title="CS HACK Judging", page_icon="🏆", layout="cente
 st.markdown("""
 <style>
     /* --- ייבוא הפונט Rubik מגוגל פונטס --- */
-    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;800&display=swap');
 
     /* החלת הפונט על כל רכיבי האפליקציה */
     html, body, [class*="css"], [class*="st-"] {
@@ -40,8 +40,8 @@ st.markdown("""
 
     /* The thumb (the circle you drag) */
     div[data-baseweb="slider"] div[role="slider"] {
-        background-color: #ffffff !important;
-        border: 3px solid #FFD700 !important;
+        background-color: #ff4b4b !important; /* אדום חי וברור */
+        border: 3px solid #ffffff !important; /* מסגרת לבנה להבלטה */
         box-shadow: 0px 2px 5px rgba(0,0,0,0.5) !important;
     }
     /* ========================================= */
@@ -51,22 +51,31 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* עיצוב הכפתור שיהיה בולט ומרשים */
+    /* =========================================
+       עיצוב כפתור השליחה (בולט וזוהר למצב כהה)
+       ========================================= */
     .stButton>button {
-        background-color: #FFD700;
-        color: #000000;
-        border-radius: 8px;
-        border: none;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        font-weight: bold;
-        font-size: 18px;
-        transition: 0.3s;
+        background-color: #FFD700 !important; /* צבע זהב חזק */
+        color: #000000 !important; /* טקסט שחור קונטרסטי */
+        border-radius: 12px !important; /* פינות עגולות ורכות יותר */
+        border: 2px solid #FFC107 !important; /* מסגרת שמדגישה את הגבולות */
+        box-shadow: 0px 0px 15px rgba(255, 215, 0, 0.3) !important; /* הילה (גלואו) סביב הכפתור */
+        font-weight: 800 !important; /* טקסט שמן מאוד */
+        font-size: 22px !important; /* פונט גדול יותר משמעותית */
+        padding: 15px 30px !important; /* הגדלת שטח הכפתור למגע בטלפון */
+        margin-top: 20px !important; /* ריווח נשימה מהסליידר האחרון */
+        transition: all 0.3s ease-in-out !important; /* אנימציה חלקה */
         font-family: 'Rubik', sans-serif !important; 
     }
+    
+    /* אפקט כשהעכבר מרחף (או בלחיצה בטלפון) */
     .stButton>button:hover {
-        background-color: #FFA500;
-        color: white;
+        background-color: #FFA500 !important; /* מתחלף לזהב-כתום */
+        color: white !important; /* טקסט הופך ללבן */
+        transform: scale(1.03) !important; /* הכפתור "קופץ" מעט החוצה */
+        box-shadow: 0px 0px 25px rgba(255, 215, 0, 0.6) !important; /* ההילה מתחזקת */
     }
+    /* ========================================= */
     
     /* עיצוב הרקע של הטופס (צל ופינות מעוגלות) */
     [data-testid="stForm"] {
@@ -161,7 +170,7 @@ if not all_rows:
     try:
         client = get_sheets_client()
         sheet = client.open_by_key(SHEET_ID).get_worksheet(0)
-        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Scalability", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
+        headers = ["שופט", "קבוצה", "Real Problem", "Solution", "Quality of POC", "Creativity", "Presentation", "Personal Grade", "ציון משוקלל סופי"]
         sheet.append_row(headers)
         get_all_scores.clear() 
     except:
@@ -205,33 +214,32 @@ if existing_record:
     st.warning(f"דירגת קבוצה זו בהצלחה - קבוצה {team_num} {team_desc}\n\nשליחת הטופס שוב תעדכן את הציון הקיים")
     
     try:
+        # התאמת המיקומים לאחר הסרת Scalability
         val_real = int(float(row[2]))
         val_soln = int(float(row[3]))
-        val_scale = int(float(row[4]))
-        val_poc = int(float(row[5]))
-        val_creat = int(float(row[6]))
-        val_pres = int(float(row[7]))
-        val_pers = int(float(row[8]))
+        val_poc = int(float(row[4]))
+        val_creat = int(float(row[5]))
+        val_pres = int(float(row[6]))
+        val_pers = int(float(row[7]))
     except:
-        val_real = val_soln = val_scale = val_poc = val_creat = val_pres = val_pers = 5
+        val_real = val_soln = val_poc = val_creat = val_pres = val_pers = 5
 else:
-    val_real = val_soln = val_scale = val_poc = val_creat = val_pres = val_pers = 5
+    val_real = val_soln = val_poc = val_creat = val_pres = val_pers = 5
 
 st.markdown("---")
 st.markdown("<h4 style='text-align: center;'> קריטריוני שיפוט (1-10)</h4>", unsafe_allow_html=True)
 st.write("") 
 
 with st.form("judging_form"):
-    real_problem = st.slider(" Real Problem (15%)", 1, 10, val_real)
+    real_problem = st.slider(" Real Problem (20%)", 1, 10, val_real)
     solution = st.slider(" Does the solution solve it? (20%)", 1, 10, val_soln)
-    scalability = st.slider(" Scalability (10%)", 1, 10, val_scale)
     quality_poc = st.slider(" Quality of POC (20%)", 1, 10, val_poc)
-    creativity = st.slider(" Creativity & Novelty (10%)", 1, 10, val_creat)
+    creativity = st.slider(" Creativity & Novelty (15%)", 1, 10, val_creat)
     presentation = st.slider(" Presentation (10%)", 1, 10, val_pres)
     personal = st.slider(" Personal Grade (15%)", 1, 10, val_pers)
 
     st.write("") 
-    submitted = st.form_submit_button(" שלח ציון למערכת", use_container_width=True)
+    submitted = st.form_submit_button("שלח ציון למערכת", use_container_width=True)
 
     if submitted:
         if not judge_name:
@@ -239,17 +247,17 @@ with st.form("judging_form"):
         else:
             st.session_state.saved_judge_name = judge_name
             
-            total_score = (real_problem * 0.15) + (solution * 0.20) + \
-                          (scalability * 0.10) + (quality_poc * 0.20) + \
-                          (creativity * 0.10) + (presentation * 0.10) + \
-                          (personal * 0.15)
+            # חישוב משוקלל עם האחוזים החדשים
+            total_score = (real_problem * 0.20) + (solution * 0.20) + \
+                          (quality_poc * 0.20) + (creativity * 0.15) + \
+                          (presentation * 0.10) + (personal * 0.15)
             
+            # בניית שורת הנתונים החדשה (9 עמודות)
             new_row = [
                 judge_name, 
                 str(team_num), 
                 real_problem, 
                 solution, 
-                scalability, 
                 quality_poc, 
                 creativity, 
                 presentation, 
@@ -264,9 +272,10 @@ with st.form("judging_form"):
             if existing_record:
                 idx, _ = existing_record
                 try:
-                    sheet.update(f"A{idx}:J{idx}", [new_row])
+                    # עדכון שורה קיימת לפי הטווח החדש (A עד I במקום J)
+                    sheet.update(f"A{idx}:I{idx}", [new_row])
                 except:
-                    sheet.update([new_row], f"A{idx}:J{idx}")
+                    sheet.update([new_row], f"A{idx}:I{idx}")
                 # חזרה להודעה הקצרה והמקורית
                 st.success(f"הדירוג של קבוצה {team_num} עודכן בהצלחה במערכת!")
             else:
@@ -278,3 +287,4 @@ with st.form("judging_form"):
             
             time.sleep(1.5)
             st.rerun()
+            
